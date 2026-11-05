@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="MolTarget AI is a scripted research-support prototype for mutation-level investigation, resistance analysis, and evidence-linked reporting in EGFR-mutant NSCLC.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="MolTarget AI — scripted research prototype">
+<meta property="og:description" content="An interactive, scripted walkthrough of mutation analysis, resistance interpretation, and evidence monitoring. Research use only.">
+<meta name="theme-color" content="#1A1533">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='17' fill='none' stroke='%234A3B94' stroke-width='4'/%3E%3Ccircle cx='20' cy='20' r='9' fill='%234A3B94'/%3E%3Ccircle cx='26' cy='14' r='4' fill='%23B52F68'/%3E%3C/svg%3E">
+<title>MolTarget AI — scripted demo v5</title>
+<style>
+/* MolTarget AI demo v5. Identity: a pathology slide, hematoxylin (blue-violet) and eosin (pink). */
+:root{
+  color-scheme: light dark;
+  /* Design tokens. light-dark() keeps both themes in one place. */
+  --bg:light-dark(#F3F0F8,#110D22);
+  --surface:light-dark(#FBF9FE,#1A1533);
+  --surface2:light-dark(#ECE8F6,#241D47);
+  --ink:light-dark(#1B1533,#F0ECFC);
+  --ink2:light-dark(#5B5579,#ADA7CC);
+  --line:light-dark(#D9D3EA,#352D60);
+  --hema:light-dark(#4A3B94,#AA9CF6);
+  --hema-soft:light-dark(#E5E0F5,#2B2458);
+  --eosin:light-dark(#B52F68,#F58AB6);
+  --eosin-soft:light-dark(#F8DEE9,#4C2342);
+  --ok:light-dark(#17725D,#5ED6B4);   --ok-soft:light-dark(#D6EFE7,#173D37);
+  --warn:light-dark(#85590A,#EBBA55); --warn-soft:light-dark(#F5E7C6,#3F3114);
+  --on-hema:light-dark(#FFFFFF,#110D22);
+  --on-eosin:light-dark(#FFFFFF,#2B0F1E);
+  --baseA:light-dark(#2E9D57,#4FCB7C); --baseC:light-dark(#2F6FD0,#6C9CF2);
+  --baseG:light-dark(#2A2540,#D9D4F0); --baseT:light-dark(#D64545,#F27A7A);
+  --shadow:0 1px 0 light-dark(rgba(27,21,51,.05),rgba(0,0,0,.35)),0 18px 40px -22px light-dark(rgba(74,59,148,.35),rgba(0,0,0,.7));
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:24px;--s6:32px;--s7:48px;--s8:72px;
+  --r1:6px;--r2:14px;--r3:24px;
+  --fs-s:.8rem;--fs-m:.92rem;--fs-b:1rem;--fs-l:1.2rem;
+}
+:root[data-theme="light"]{color-scheme:light}
+:root[data-theme="dark"]{color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth}
+body{margin:0;min-height:100vh;color:var(--ink);font-family:var(--sans);line-height:1.55;-webkit-text-size-adjust:100%;
+  background:
+   radial-gradient(900px 440px at 88% -120px,color-mix(in srgb,var(--hema) 16%,transparent),transparent 70%),
+   radial-gradient(700px 380px at -8% 140px,color-mix(in srgb,var(--eosin) 11%,transparent),transparent 70%),
+   var(--bg);
+  background-repeat:no-repeat}
+button{font:inherit;color:inherit;cursor:pointer}
+a{color:var(--hema);font-weight:600}
+:focus-visible{outline:3px solid var(--eosin);outline-offset:2px;border-radius:4px}
+.skip{position:absolute;left:-999px;top:8px;background:var(--hema);color:var(--on-hema);padding:8px 14px;border-radius:8px;z-index:50}
+.skip:focus{left:12px}
+.wrap{max-width:1240px;margin:0 auto;padding:0 var(--s5) 96px}
+
+/* header */
+.bar{position:sticky;top:0;z-index:20;backdrop-filter:blur(12px);background:color-mix(in srgb,var(--bg) 80%,transparent);border-bottom:1px solid var(--line)}
+.bar-in{max-width:1240px;margin:0 auto;padding:10px var(--s5);display:flex;align-items:center;gap:var(--s4);flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--serif);font-size:1.3rem;font-weight:700;letter-spacing:-.01em}
+.nav{display:flex;gap:var(--s1);margin-left:var(--s4)}
+.nav button{border:0;background:transparent;padding:8px 14px;border-radius:999px;color:var(--ink2);font-weight:600}
+.nav button[aria-current="page"]{background:var(--hema-soft);color:var(--hema)}
+.bar-end{margin-left:auto;display:flex;align-items:center;gap:var(--s3);flex-wrap:wrap}
+.chip{font-size:var(--fs-s);padding:3px 11px;border-radius:999px;background:var(--warn-soft);color:var(--warn);font-weight:600}
+.seg{display:inline-flex;gap:3px;background:var(--hema-soft);padding:3px;border-radius:999px;flex-wrap:wrap}
+.seg button{border:0;background:transparent;padding:6px 14px;border-radius:999px;color:var(--ink2);font-weight:600;font-size:var(--fs-m)}
+.seg button[aria-pressed="true"]{background:var(--hema);color:var(--on-hema)}
+
+/* hero */
+.hero{display:grid;grid-template-columns:minmax(260px,1fr) 1.65fr;gap:var(--s7);padding:var(--s7) 0 var(--s5);align-items:center}
+.blurb{font-family:var(--serif);font-size:var(--fs-l);color:var(--ink2);margin:0 0 var(--s4);max-width:30ch;line-height:1.35}
+h1{font-family:var(--serif);font-weight:600;font-size:clamp(2.1rem,5.4vw,3.7rem);line-height:1.02;margin:0 0 var(--s4);letter-spacing:-.025em}
+.vmeta{display:grid;gap:2px;color:var(--ink2);font-size:var(--fs-m);margin-bottom:var(--s5)}
+.vmeta b{color:var(--ink);font-family:var(--mono);font-weight:600}
+.vchips{display:flex;flex-wrap:wrap;gap:var(--s2)}
+.vchip{border:1px solid var(--line);background:var(--surface);padding:7px 16px;border-radius:999px;font-family:var(--mono);font-size:var(--fs-m);display:inline-flex;align-items:center;gap:8px}
+.vchip[aria-pressed="true"]{background:var(--hema);border-color:var(--hema);color:var(--on-hema)}
+.vchip .new{width:8px;height:8px;border-radius:50%;background:var(--eosin)}
+.plate{background:var(--surface);border:1px solid var(--line);border-radius:var(--r1) var(--r3) var(--r1) var(--r1);padding:var(--s4) var(--s4) var(--s2);box-shadow:var(--shadow)}
+.plate h2{margin:0 0 2px;font-size:var(--fs-b);font-weight:600}
+.plate p{margin:0 0 var(--s2);font-size:var(--fs-s);color:var(--ink2)}
+.plate svg{display:block;width:100%;height:auto}
+.plate text{font-family:var(--sans)}
+.legend{display:flex;gap:var(--s4);font-size:var(--fs-s);color:var(--ink2);margin:0 0 var(--s2);font-family:var(--mono)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.bA{stroke:var(--baseA)} .bC{stroke:var(--baseC)} .bG{stroke:var(--baseG)} .bT{stroke:var(--baseT)}
+.tA{fill:var(--baseA)} .tC{fill:var(--baseC)} .tG{fill:var(--baseG)} .tT{fill:var(--baseT)}
+
+/* case timeline */
+.visits{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.visits button{border:0;background:transparent;text-align:left;padding:var(--s4) var(--s4) 14px;border-bottom:4px solid transparent;color:var(--ink2);display:grid;gap:2px}
+.visits button b{color:var(--ink);font-family:var(--serif);font-size:var(--fs-l)}
+.visits button small{font-family:var(--mono);color:var(--hema)}
+.visits button[aria-selected="true"]{border-bottom-color:var(--eosin);background:var(--hema-soft)}
+.visits button+button{border-left:1px solid var(--line)}
+
+/* workbench */
+.work{display:grid;grid-template-columns:minmax(300px,390px) 1fr;gap:0 var(--s7);margin-top:var(--s6);align-items:start}
+.rail{position:sticky;top:78px;max-height:calc(100vh - 96px);overflow:auto;padding-right:var(--s2)}
+.runbar{display:flex;align-items:center;gap:var(--s3);margin-bottom:var(--s4);flex-wrap:wrap}
+.run{border:0;background:var(--eosin);color:var(--on-eosin);font-weight:700;padding:12px 26px;border-radius:999px;box-shadow:var(--shadow)}
+.run[disabled]{opacity:.65;cursor:progress}
+.runbar small{color:var(--ink2)}
+h3.sec{font-family:var(--serif);font-size:var(--fs-l);margin:0 0 var(--s2)}
+.note{font-size:var(--fs-s);color:var(--ink2);margin:0 0 var(--s3)}
+
+/* stage rail */
+.stages{list-style:none;margin:0;padding:0}
+.stage{position:relative;padding-left:38px}
+.stage::before{content:"";position:absolute;left:12px;top:30px;bottom:-4px;width:2px;background:var(--line)}
+.stage:last-child::before{display:none}
+.node{position:absolute;left:1px;top:8px;width:24px;height:24px;border-radius:50%;border:2px solid var(--line);background:var(--bg);display:grid;place-items:center;font-size:.72rem;font-weight:800;color:var(--ink2)}
+.s-running .node{border-color:var(--hema);color:var(--hema);animation:pulse 1.1s ease-in-out infinite}
+.s-done .node{background:var(--hema);border-color:var(--hema);color:var(--on-hema)}
+.s-flag .node{background:var(--eosin);border-color:var(--eosin);color:var(--on-eosin)}
+@keyframes pulse{50%{box-shadow:0 0 0 7px var(--hema-soft)}}
+.stage>button{display:block;width:100%;text-align:left;border:0;background:transparent;padding:8px 0 10px}
+.sname{font-weight:600}
+.s-pending .sname{color:var(--ink2);font-weight:500}
+.ssum{display:block;font-size:var(--fs-s);color:var(--ink2);margin-top:2px}
+.sdetail{padding:0 0 var(--s4);font-size:var(--fs-m)}
+.sdetail ul{list-style:none;margin:var(--s2) 0 0;padding:0}
+.sdetail li{padding:3px 0 3px 22px;position:relative}
+.sdetail li::before{position:absolute;left:0;font-weight:800}
+.sdetail li.ok::before{content:"✓";color:var(--ok)}
+.sdetail li.warn::before{content:"!";color:var(--warn)}
+.tools{display:flex;flex-wrap:wrap;gap:6px}
+.tools span{font-size:.74rem;border:1px solid var(--line);border-radius:999px;padding:1px 9px;background:var(--surface)}
+.tools span.src{border-color:var(--hema);color:var(--hema)}
+details.events{margin-top:var(--s5);border-top:1px solid var(--line);padding-top:var(--s3)}
+details.events summary{cursor:pointer;font-weight:600;font-size:var(--fs-m)}
+.evlog{margin:var(--s2) 0 0;max-height:210px;overflow:auto;font-family:var(--mono);font-size:.72rem;line-height:1.7;color:var(--ink2)}
+.evlog div{display:grid;grid-template-columns:44px 124px 1fr;gap:6px}
+.evlog b{color:var(--hema);font-weight:600}
+.evlog b.bad{color:var(--eosin)}
+
+/* results */
+.results{min-width:0}
+.input{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:var(--s3) var(--s5);margin:0 0 var(--s5);padding:0 0 var(--s5);border-bottom:1px solid var(--line)}
+.input dt{font-size:var(--fs-s);color:var(--ink2)}
+.input dd{margin:0;font-weight:600;overflow-wrap:anywhere}
+.tabs{display:flex;gap:var(--s5);border-bottom:1px solid var(--line);margin-bottom:var(--s5);overflow-x:auto}
+.tabs button{border:0;background:transparent;padding:8px 0 10px;border-bottom:3px solid transparent;color:var(--ink2);font-weight:600;white-space:nowrap}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--eosin)}
+.empty{padding:var(--s7) 0;color:var(--ink2);max-width:46ch}
+.empty b{display:block;font-family:var(--serif);font-size:1.6rem;color:var(--ink);margin-bottom:var(--s2);line-height:1.15}
+.sk{height:14px;border-radius:7px;margin:12px 0;background:linear-gradient(90deg,var(--surface2),var(--hema-soft),var(--surface2));background-size:200% 100%;animation:sh 1.4s linear infinite}
+@keyframes sh{to{background-position:-200% 0}}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:var(--s4);margin:0 0 var(--s6)}
+.stat{border-top:3px solid var(--line);padding-top:var(--s2)}
+.stat b{display:block;font-family:var(--serif);font-size:2rem;line-height:1}
+.stat span{font-size:var(--fs-s);color:var(--ink2)}
+.stat.ok{border-top-color:var(--ok)} .stat.warn{border-top-color:var(--warn)} .stat.bad{border-top-color:var(--eosin)} .stat.hema{border-top-color:var(--hema)}
+.headline{font-family:var(--serif);font-size:clamp(1.45rem,2.9vw,2.1rem);line-height:1.18;margin:0 0 var(--s5);max-width:32ch;letter-spacing:-.01em}
+.chain{display:flex;flex-wrap:wrap;gap:var(--s2) 0;margin:0 0 var(--s6)}
+.chain div{position:relative;padding:10px 16px;background:var(--hema-soft);font-weight:600;font-size:var(--fs-m)}
+.chain div:not(:last-child){margin-right:22px}
+.chain div:not(:last-child)::after{content:"";position:absolute;right:-14px;top:0;border-left:14px solid var(--hema-soft);border-top:22px solid transparent;border-bottom:22px solid transparent}
+.chain div.end{background:var(--eosin-soft)}
+.chain div.end::after{border-left-color:var(--eosin-soft)!important}
+.rows{border-top:1px solid var(--line)}
+.row{display:grid;grid-template-columns:minmax(120px,190px) 1fr auto;gap:6px var(--s4);padding:14px 0;border-bottom:1px solid var(--line);align-items:baseline}
+.row .nm{font-family:var(--serif);font-size:var(--fs-l);font-weight:600;line-height:1.2}
+.row .nm small{display:block;font-family:var(--sans);font-weight:400;font-size:var(--fs-s);color:var(--ink2)}
+.row .tx{font-size:var(--fs-m)}
+.pill{display:inline-block;font-size:.76rem;font-weight:700;padding:2px 10px;border-radius:999px;white-space:nowrap}
+.p-ok{background:var(--ok-soft);color:var(--ok)}
+.p-warn{background:var(--warn-soft);color:var(--warn)}
+.p-hema{background:var(--hema-soft);color:var(--hema)}
+.p-bad{background:var(--eosin-soft);color:var(--eosin)}
+.p-plain{background:transparent;border:1px solid var(--line);color:var(--ink2)}
+.limits{margin:var(--s6) 0 0;padding:var(--s4) 18px;border-left:4px solid var(--warn);background:var(--warn-soft);font-size:var(--fs-m);border-radius:0 var(--r1) var(--r1) 0}
+.limits b{display:block;margin-bottom:4px}
+.limits ul{margin:0;padding-left:18px}
+.summary{color:var(--ink2);margin:0 0 var(--s4)}
+.fchips{display:flex;gap:var(--s2);flex-wrap:wrap;margin:0 0 var(--s3)}
+.fchips button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 14px;font-size:var(--fs-s);font-weight:600;color:var(--ink2)}
+.fchips button[aria-pressed="true"]{background:var(--hema);border-color:var(--hema);color:var(--on-hema)}
+.claim{padding:14px 0;border-bottom:1px solid var(--line)}
+.claim .meta{display:flex;flex-wrap:wrap;gap:6px var(--s2);align-items:center;margin-top:var(--s2);font-size:var(--fs-s);color:var(--ink2)}
+s.draft{color:var(--ink2);text-decoration-color:var(--eosin);text-decoration-thickness:2px}
+.arrow{color:var(--eosin);font-weight:800}
+.diff{display:grid;grid-template-columns:minmax(120px,190px) 1fr 1fr;gap:6px var(--s4);padding:12px 0;border-bottom:1px solid var(--line);font-size:var(--fs-m)}
+.diff.head{font-size:var(--fs-s);color:var(--ink2);border-top:1px solid var(--line)}
+.diff .k{font-weight:600}
+.phase{margin:var(--s6) 0 0;padding:var(--s4) 18px;border:1px solid var(--line);background:var(--surface);border-radius:var(--r1) var(--r2) var(--r1) var(--r1);box-shadow:var(--shadow)}
+.phase h3{margin:0 0 2px;font-family:var(--serif);font-size:var(--fs-l)}
+.phase p{margin:6px 0 0;font-size:var(--fs-m)}
+.upd{border:1px solid var(--line);background:var(--surface);padding:var(--s4) 18px;border-radius:var(--r1) var(--r2) var(--r1) var(--r1);margin-bottom:var(--s5);box-shadow:var(--shadow)}
+.upd h4{margin:0 0 4px;font-family:var(--serif);font-size:var(--fs-l)}
+.upd p{margin:0;font-size:var(--fs-m);color:var(--ink2)}
+.ba{display:grid;grid-template-columns:1fr 1fr;gap:var(--s4);margin:6px 0 var(--s5)}
+.ba>div{padding:14px 16px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r1)}
+.ba>div.after{border-color:var(--eosin)}
+.ba h5{margin:0 0 6px;font-size:var(--fs-s);color:var(--ink2);font-weight:600}
+.ba p{margin:0;font-size:var(--fs-m)}
+details.notes{margin-top:var(--s6);border:1px dashed var(--line);padding:12px 16px;border-radius:var(--r1);font-size:var(--fs-m)}
+details.notes summary{cursor:pointer;font-weight:600}
+details.notes ul{margin:var(--s2) 0 0;padding-left:18px}
+
+/* other pages */
+.page h2{font-family:var(--serif);font-size:clamp(1.7rem,3.8vw,2.7rem);margin:var(--s7) 0 var(--s2);line-height:1.08;letter-spacing:-.015em}
+.page .lead{color:var(--ink2);max-width:58ch;margin:0 0 var(--s6)}
+.metric{display:grid;grid-template-columns:minmax(190px,280px) 1fr;gap:var(--s2) var(--s5);padding:var(--s4) 0;border-bottom:1px solid var(--line);align-items:center}
+.metric.first{border-top:1px solid var(--line)}
+.bar2{display:grid;grid-template-columns:132px 1fr 60px;gap:10px;align-items:center;font-size:var(--fs-m);margin:3px 0}
+.bar2 i{display:block;height:10px;border-radius:5px;background:var(--hema-soft);overflow:hidden}
+.bar2 i u{display:block;height:100%;background:var(--hema)}
+.bar2.mt i u{background:var(--eosin)}
+.bar2.db i u{background:var(--ink2)}
+.bar2.none i{background:transparent;border:1px dashed var(--line)}
+.statusrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:var(--s4) var(--s5);margin:0 0 var(--s6)}
+.statusrow div{padding:10px 0;border-top:3px solid var(--line);display:grid;gap:6px;justify-items:start}
+.statusrow b{font-family:var(--serif);font-size:1.1rem}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:var(--s6);margin-top:var(--s6)}
+.cols h3{font-family:var(--serif);margin:0 0 var(--s2);font-size:var(--fs-l)}
+.cols ul,.cols ol{margin:0;padding-left:20px;font-size:var(--fs-m)}
+.cols li{margin:4px 0}
+.pitch{font-family:var(--serif);font-size:clamp(1.3rem,2.7vw,1.85rem);line-height:1.3;border-left:4px solid var(--eosin);padding:4px 0 4px 20px;margin:var(--s7) 0;max-width:44ch}
+.setgrid{display:grid;gap:var(--s6);max-width:720px}
+.setrow{display:grid;gap:var(--s2);padding-bottom:var(--s5);border-bottom:1px solid var(--line)}
+.setrow h3{margin:0;font-family:var(--serif);font-size:var(--fs-l)}
+.setrow p{margin:0;color:var(--ink2);font-size:var(--fs-m)}
+.foot{margin-top:var(--s7);padding-top:var(--s4);border-top:1px solid var(--line);font-size:var(--fs-s);color:var(--ink2)}
+
+/* v3: resistance map, source-said, sign-off, manifest */
+.mapwrap{background:var(--surface);border:1px solid var(--line);border-radius:var(--r1) var(--r3) var(--r1) var(--r1);padding:var(--s3);box-shadow:var(--shadow)}
+.mapwrap svg{display:block;width:100%;height:auto}
+.mapwrap text{font-family:var(--sans)}
+.edge{cursor:pointer;outline:none}
+.edge:focus-visible .eline{stroke:var(--eosin);stroke-width:3.5}
+.mapdetail{margin-top:var(--s5)}
+.mapdetail h3{font-family:var(--serif);font-size:var(--fs-l);margin:0 0 var(--s2)}
+.tagrow{display:flex;flex-wrap:wrap;gap:var(--s2);margin:var(--s3) 0}
+.said{margin-top:8px;font-size:var(--fs-m);color:var(--ink2);border-left:3px solid var(--line);padding-left:12px}
+.said b{color:var(--ink);margin-right:6px}
+.review{margin:var(--s5) 0 0;padding:var(--s4) 18px;border:1px solid var(--eosin);border-radius:var(--r1) var(--r2) var(--r1) var(--r1);background:var(--surface)}
+.review h4{margin:0 0 4px;font-family:var(--serif);font-size:var(--fs-l)}
+.rvbtns{display:flex;gap:var(--s2);flex-wrap:wrap;margin-top:var(--s3)}
+.rvbtns button{border:1px solid var(--line);background:var(--bg);padding:7px 18px;border-radius:999px;font-weight:700}
+.rvbtns button.ok{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+.rvbtns button.bad{background:var(--eosin-soft);color:var(--eosin);border-color:transparent}
+textarea.rvtext{width:100%;min-height:92px;margin-top:var(--s3);border:1px solid var(--line);border-radius:var(--r1);background:var(--bg);color:var(--ink);padding:10px;font:inherit}
+.audit{margin-top:var(--s3);font-family:var(--mono);font-size:.76rem;color:var(--ink2)}
+.manifest{margin-top:var(--s5);border:1px solid var(--line);border-radius:var(--r1);padding:12px 16px;font-size:var(--fs-m)}
+.manifest summary{cursor:pointer;font-weight:600}
+.mtable div{display:grid;grid-template-columns:180px 1fr;gap:2px 14px;padding:8px 0;border-top:1px solid var(--line)}
+.mtable span{color:var(--ink2)}
+.mtable small{grid-column:2;color:var(--ink2)}
+.tag{font-family:var(--serif);font-style:italic;font-size:var(--fs-l);color:var(--hema);margin:-6px 0 var(--s5)}
+@media (max-width:900px){
+  .hero{grid-template-columns:1fr;gap:var(--s5);padding-top:var(--s6)}
+  .work{grid-template-columns:1fr}
+  .rail{position:static;max-height:none;overflow:visible;padding:0 0 var(--s5);border-bottom:1px solid var(--line);margin-bottom:var(--s5)}
+  .row{grid-template-columns:1fr auto}
+  .row .tx{grid-column:1/-1;order:3}
+  .diff{grid-template-columns:1fr}
+  .mtable div{grid-template-columns:1fr}
+  .mtable small{grid-column:1}
+  .ba,.cols,.metric{grid-template-columns:1fr}
+  .visits button small{display:none}
+  .nav{margin-left:0;order:3;width:100%;overflow-x:auto}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .s-running .node,.sk{animation:none}
+}
+@media print{
+  :root{color-scheme:light}
+  body{background:#fff}
+  .bar,.rail,.tabs,.vchips,.visits,.foot,.notes,.fchips,.skip,.seg{display:none!important}
+  .work{display:block} .hero{padding:0}
+}
+
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="bar">
+  <div class="bar-in">
+    <div class="brand">
+      <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="13" fill="none" stroke="var(--hema)" stroke-width="2.5"/><circle cx="15" cy="15" r="7" fill="var(--hema)"/><circle cx="19.5" cy="11.5" r="3" fill="var(--eosin)"/></svg>
+      MolTarget AI
+    </div>
+    <nav class="nav" aria-label="Main">
+      <button data-view="walk" aria-current="page">Walkthrough</button>
+      <button data-view="proof">Proof</button>
+      <button data-view="rel">Positioning</button>
+      <button data-view="settings">Settings</button>
+    </nav>
+    <div class="bar-end">
+      <span class="chip">Demo v5 · scripted prototype · research use only</span>
+      <div class="seg" role="group" aria-label="Theme">
+        <button data-theme-btn="auto" aria-pressed="true">Auto</button>
+        <button data-theme-btn="light" aria-pressed="false">Light</button>
+        <button data-theme-btn="dark" aria-pressed="false">Dark</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main id="main" class="wrap">
+  <section id="walk" aria-label="Walkthrough">
+    <div class="hero">
+      <div>
+        <p class="blurb" id="hBlurb"></p>
+        <h1 id="hTitle"></h1>
+        <div class="vmeta" id="hMeta"></div>
+        <div class="vchips" id="hChips" role="group" aria-label="Variants in this case"></div>
+      </div>
+      <div class="plate">
+        <h2 id="plateTitle"></h2>
+        <p id="plateSub"></p>
+        <div class="legend" id="legend"></div>
+        <svg id="chrom" viewBox="0 0 640 262" role="img"></svg>
+        <p class="note" id="visualNote">Illustrative schematic only — not raw sequencing data. Peak heights are not measured allele fractions.</p>
+        <svg id="pmap" viewBox="0 0 640 84" role="img" aria-label="EGFR protein map"></svg>
+      </div>
+    </div>
+
+    <div class="visits" id="visits" role="tablist" aria-label="Case timeline"></div>
+
+    <div class="work">
+      <aside class="rail" aria-label="Agent workflow">
+        <div class="runbar"><button class="run" id="runBtn"></button><small id="runNote" role="status" aria-live="polite"></small></div>
+        <h3 class="sec">Agent workflow</h3>
+        <p class="note">Scripted run. Tool names show planned integrations. None is connected yet.</p>
+        <ol class="stages" id="stages"></ol>
+        <details class="events"><summary>Event stream</summary>
+          <p class="note" style="margin-top:8px">This prototype generates events locally from scripted case data. No API, source retrieval, or Server-Sent Events connection is active.</p>
+          <div class="evlog" id="evlog" aria-live="off"></div>
+        </details>
+      </aside>
+      <section class="results" id="resultsWrap">
+        <dl class="input" id="input"></dl>
+        <div id="results"></div>
+        <details class="notes" id="notes"></details>
+      </section>
+    </div>
+  </section>
+
+  <section id="proof" class="page" hidden></section>
+  <section id="rel" class="page" hidden></section>
+  <section id="settings" class="page" hidden></section>
+
+  <p class="foot">This is a scripted interactive prototype. Events, source summaries, reviewer actions and evidence updates are simulated locally; no live agent, external source retrieval or clinical workflow is connected. Illustrations are schematic, not patient or sequencing data. Research use only — not diagnosis or treatment advice.</p>
+</main>
+
+<script>
+/* ============================================================
+   BENCHMARK RESULTS — fill these ONLY from a real, independent run.
+   Use numbers between 0 and 100. Leave null until the run is done.
+   ============================================================ */
+const BENCHMARK = {
+  cases: null,   // e.g. 28
+  // a = General LLM, b = LLM + CIViC MCP (integration pending), c = MolTarget AI
+  metrics: [
+    { name:"Unsupported claims rate", better:"lower",  a:null, b:null, c:null },
+    { name:"Citation accuracy",       better:"higher", a:null, b:null, c:null },
+    { name:"Mutation-to-target accuracy", better:"higher", a:null, b:null, c:null },
+    { name:"Drug–target accuracy",    better:"higher", a:null, b:null, c:null },
+    { name:"Evidence classification accuracy", better:"higher", a:null, b:null, c:null },
+    { name:"Resistance mechanism accuracy", better:"higher", a:null, b:null, c:null },
+    { name:"Abstention accuracy (for example, unknown phasing)", better:"higher", a:null, b:null, c:null },
+    { name:"Report change detection accuracy", better:"higher", a:null, b:null, c:null }
+  ]
+};
+
+
+/* ---------------- case data ---------------- */
+const S = (name,tools,summary,checks,flag)=>({name,tools,summary,checks,flag:!!flag});
+const V_L858R = {id:"L858R",c:"c.2573T>G",p:"p.Leu858Arg",exon:21,aa:858,
+  ref:"GATTTTGGGCTGGCCAAA",alt:"GATTTTGGGCGGGCCAAA",idx:10,codon:"codon 858"};
+const V_T790M = {id:"T790M",c:"c.2369C>T",p:"p.Thr790Met",exon:20,aa:790,
+  ref:"ATCACGCAGCTCATG",alt:"ATCATGCAGCTCATG",idx:4,codon:"codon 790"};
+// C797S is shown at protein level: the nucleotide change must come from the test report.
+const V_C797S = {id:"C797S",c:"nucleotide change not given",p:"p.Cys797Ser",exon:20,aa:797,kind:"protein",
+  ref:"TQLMPFGCLLDY",alt:"TQLMPFGSLLDY",idx:7,start:790,codon:"residue 797"};
+
+const CASES = {
+ baseline:{
+  tab:"Baseline", sub:"Visit 1: first tumor test", runLabel:"Run agent",
+  title:"EGFR p.Leu858Arg",
+  variants:[V_L858R], newVariants:[],
+  map:{active:["L858"], note:"EGFR L858R"},
+  input:[["Tumor type","Non-small cell lung cancer"],["Gene","EGFR"],["Variant","c.2573T>G"],["Transcript","NM_005228.5"],["Genome build","GRCh38"],["Entry","Manual"]],
+  stages:[
+   S("Validate input",["HGVS syntax check","Gene symbol registry"],"Gene, variant and tumor type are consistent. No allele frequency was given, so the agent will not estimate clonality.",[["EGFR is a valid gene symbol","ok"],["c.2573T>G is valid HGVS","ok"],["Allele frequency missing","warn"]]),
+   S("Normalize variant",["Transcript mapper"],"c.2573T>G on NM_005228.5 maps to p.Leu858Arg in exon 21 (GRCh38).",[["Transcript matches the reference","ok"],["Protein change matches the nucleotide change","ok"]]),
+   S("Interpret mutation",["CIViC","ClinVar"],"Activating missense variant in the kinase domain. Oncogenic, with clinical and cellular support.",[["Two independent sources agree","ok"],["Evidence covers lung cancer, the tumor type entered","ok"]]),
+   S("Investigate mechanism",["UniProt","PubMed"],"L858R sits in the activation loop. It favors the active kinase shape, so EGFR signals without waiting for a ligand.",[["Structural claim traced to a source","ok"],["Pathway weight differs between cell types","warn"]]),
+   S("Find targets",["UniProt","ChEMBL"],"The ATP pocket of the EGFR kinase domain is the target. Blocking it is the established strategy for this variant.",[["Target is linked to the variant, not only the gene","ok"]]),
+   S("Search active ingredients",["ChEMBL","ClinicalTrials.gov","Drug labels"],"Four approved EGFR inhibitors found. No experimental compound was strong enough to enter the report.",[["Approval status read from labels","ok"],["Each compound matched to this variant","ok"]]),
+   S("Verify evidence",["PubMed","Source reader"],"@verify",[["Source exists","ok"],["Source covers the same variant and tumor type","ok"],["Source text supports the claim","ok"]]),
+   S("Critic review",["Critic agent"],"One claim removed and one rewritten before approval.",[["Mutation is entered, not inferred","ok"],["Target is linked to the mutation","ok"],["Compounds are linked to the target","ok"],["Experimental drugs are not shown as approved","ok"],["One draft claim was not supported","warn"]],true),
+   S("Write report",["Report builder"],"Report written with sources, evidence level and limits. Marked research use only.",[["Every claim in the report has a source","ok"]])
+  ],
+  claims:[
+   {t:"EGFR L858R is an activating missense variant in exon 21.",lv:"Biochemical",st:"verified",src:"ClinVar, CIViC"},
+   {t:"L858R lies in the kinase domain activation loop and favors the active conformation.",lv:"Structural",st:"verified",src:"UniProt P00533, PubMed"},
+   {t:"The altered kinase keeps signalling through RAS–RAF–MEK–ERK and PI3K–AKT.",lv:"Cellular",st:"verified",src:"PubMed"},
+   {t:"Gefitinib, erlotinib, afatinib and osimertinib are approved for NSCLC with EGFR L858R or exon 19 deletion.",lv:"Clinical",st:"verified",src:"Drug labels, ChEMBL"},
+   {t:"Approved inhibitors reduce progression in this setting, but benefit differs between patients.",lv:"Clinical",st:"revised",src:"Drug labels, PubMed",draft:"These drugs will work for this tumor.",why:"Overstated. Rewritten as a population-level statement."},
+   {t:"At the report date, first-line options were EGFR inhibitor monotherapy.",lv:"Clinical",st:"verified",src:"Drug labels"},
+   {t:"Resistance can develop. T790M is a well-known acquired mechanism.",lv:"Clinical",st:"verified",src:"PubMed"},
+   {t:"How strongly each downstream pathway drives growth depends on the cell type.",lv:"Cellular",st:"hypothesis",src:"PubMed"},
+   {t:"",lv:"",st:"removed",src:"",draft:"Osimertinib is effective against every EGFR mutation.",why:"Not supported. Labels list specific mutations, and exon 20 insertions respond differently."}
+  ],
+  report:{
+   headline:"L858R keeps EGFR switched on. The EGFR kinase pocket is the target.",
+   chain:["EGFR L858R","Kinase locked in active shape","RAS–ERK and PI3K–AKT signalling","Growth and survival"],
+   compounds:[
+    {n:"Gefitinib",s:"Generation 1, reversible",st:"Approved",tx:"Approved for NSCLC with L858R or exon 19 deletion.",fit:["Fits this variant","ok"]},
+    {n:"Erlotinib",s:"Generation 1, reversible",st:"Approved",tx:"Approved for the same sensitizing mutations.",fit:["Fits this variant","ok"]},
+    {n:"Afatinib",s:"Generation 2, irreversible",st:"Approved",tx:"Approved for non-resistant EGFR mutations including L858R.",fit:["Fits this variant","ok"]},
+    {n:"Osimertinib",s:"Generation 3, irreversible",st:"Approved",tx:"Approved for L858R and exon 19 deletion, and for T790M after progression.",fit:["Fits this variant","ok"]}
+   ],
+   limits:["Allele frequency was not provided, so clonality is not assessed.","Pathway weights vary between cell types.","Individual treatment decisions need clinical review."]
+  },
+  notes:{say:["Start on the input. The agent receives only these six fields.","Press Run agent. Pause on the critic stage and open it: the removed claim is the point of the demo.","Open the Evidence tab and show that every claim has a level and a source."],
+         check:["Confirm the approval wording for the four drugs against current drug labels.","Replace the simulated report date if you use a real published case."]}
+ },
+
+ progression:{
+  tab:"Progression on osimertinib", sub:"Visit 2: C797S found", runLabel:"Run agent on new result",
+  title:"EGFR L858R with C797S",
+  variants:[V_L858R,V_C797S,V_T790M], newVariants:["C797S","T790M"],
+  meta2:"Synthetic NSCLC progression scenario after first-line osimertinib",
+  map:{active:["L858","C797","T790"], note:"EGFR L858R, C797S and T790M"},
+  input:[["Tumor type","Non-small cell lung cancer"],["Original driver","L858R"],["New variant","p.Cys797Ser"],["Also detected","p.Thr790Met"],["Prior therapy","Osimertinib, first line"],["Phasing","Not provided"],["Scenario","Synthetic; not a typicality claim"],["Entry","Manual, simulated"]],
+  stages:[
+   S("Validate input",["HGVS syntax check","Case history"],"Second sample from the same case. C797S and T790M are new. The nucleotide change for C797S is missing and phasing was not provided.",[["p.Cys797Ser is valid protein notation","ok"],["Linked to the Visit 1 report","ok"],["Nucleotide change for C797S missing","warn"],["Phasing of C797S and T790M not provided","warn"]]),
+   S("Normalize variant",["Transcript mapper"],"Both new variants sit in exon 20 of NM_005228.5. L858R is still detected.",[["Protein positions match the reference","ok"],["Variants are reported, not inferred","ok"]]),
+   S("Interpret mutation",["CIViC","ClinVar"],"C797S is a known resistance variant to osimertinib. L858R stays the driver. T790M raises a question the input cannot answer.",[["Two independent sources agree on C797S","ok"],["Resistance evidence is for lung cancer","ok"]]),
+   S("Investigate mechanism",["UniProt","PubMed"],"Osimertinib forms a covalent interaction with cysteine 797. C797S impairs that interaction and can contribute to acquired resistance; the effect must be interpreted alongside other resistance mechanisms.",[["Structural claim traced to a source","ok"],["Compared with the Visit 1 mechanism","ok"]]),
+   S("Find targets",["UniProt","ChEMBL"],"Same target, new requirement: options that do not rely on cysteine 797. What applies depends on whether T790M is on the same allele.",[["Target is linked to the new variant","ok"],["Cis or trans cannot be concluded","warn"]]),
+   S("Search active ingredients",["ChEMBL","ClinicalTrials.gov","Drug labels"],"Osimertinib loses standing. Other options rest on preclinical or single-case evidence and are kept as hypotheses.",[["Approval status read from labels","ok"],["Investigational options kept separate","ok"]]),
+   S("Verify evidence",["PubMed","Source reader"],"@verify",[["Source exists","ok"],["Source covers C797S in lung cancer","ok"],["Preclinical evidence is not shown as clinical","ok"]]),
+   S("Critic review",["Critic agent"],"One claim removed and two rewritten before approval. The agent abstained on cis or trans.",[["Mutation is entered, not inferred","ok"],["Phasing is not inferred","ok"],["Experimental options are not shown as approved","ok"],["Three draft claims were not supported","warn"]],true),
+   S("Write report",["Report builder","Change log"],"Updated report written with a change log against Visit 1 and a phasing check.",[["Every claim has a source","ok"],["Changes listed","ok"]])
+  ],
+  claims:[
+   {t:"C797S substitutes cysteine 797, impairing the covalent interaction required for optimal osimertinib binding and contributing to acquired resistance.",lv:"Biochemical",st:"verified",as:"supported",chk:"abstract",src:"Review PMC4957905; Drugs 2022 review"},
+   {t:"C797S is a recognized acquired resistance mechanism to osimertinib. How often it appears differs by line of therapy.",lv:"Clinical",st:"verified",as:"supported",chk:"abstract",src:"Review PMC5233880; Drugs 2022 review"},
+   {t:"Not every osimertinib-resistant tumor carries C797S. In one cohort 6 of 15 resistant cases did, so other mechanisms must be considered.",lv:"Clinical",st:"verified",as:"supported",chk:"abstract",src:"Review PMC4957905"},
+   {t:"In published cohorts, C797S has been seen both in cis and in trans with T790M.",lv:"Clinical",st:"verified",as:"supported",chk:"abstract",src:"Review PMC5233880"},
+   {t:"In cell-line models, C797S and T790M in cis were not suppressed by any EGFR inhibitor tested, alone or combined.",lv:"Cellular",st:"verified",as:"supported",chk:"abstract",src:"Niederst 2015, PMID 25964297"},
+   {t:"In cell-line models, trans cells stayed sensitive to a first- plus third-generation combination.",lv:"Cellular",st:"hypothesis",as:"supported",chk:"abstract",src:"Niederst 2015, PMID 25964297"},
+   {t:"Case reports describe clinical improvement with a first- plus third-generation combination in trans. One patient died soon after. Another progressed after about 3 months, with C797S then found in cis.",lv:"Clinical",st:"hypothesis",as:"supported",chk:"abstract",src:"PMID 28843359; PMID 28662863"},
+   {t:"A single case report describes a clinical response with the variants in cis. One case does not establish efficacy, and it points the other way from the cell-line result.",lv:"Clinical",st:"hypothesis",as:"supported",chk:"abstract",src:"QIMS case report, article 113578"},
+   {t:"In cell-line models, C797S without T790M kept sensitivity to first-generation inhibitors.",lv:"Cellular",st:"hypothesis",as:"supported",chk:"abstract",src:"Niederst 2015, PMID 25964297"},
+   {t:"Allosteric inhibitors are being studied against C797S in L858R models. Reported models did not cover exon 19 deletion.",lv:"Animal",st:"hypothesis",as:"insufficient_information",chk:"none",src:"Not verified yet"},
+   {t:"Whether C797S and T790M are on the same allele is unknown, so the agent does not conclude cis or trans.",lv:"",st:"revised",as:"supported",src:"Input data and PMC5233880",draft:"C797S and T790M are in cis, so no EGFR inhibitor will work.",why:"Phasing was not provided, and published cases show both configurations."},
+   {t:"For cis, cell-line data and one case report disagree, so clinical benefit in cis is not established.",lv:"Clinical",st:"revised",as:"supported",chk:"abstract",src:"Niederst 2015; QIMS case report",draft:"No treatment can work when the variants are in cis.",why:"Overgeneralized. A case report describes a response in cis."},
+   {t:"",lv:"",st:"removed",src:"",draft:"Gefitinib overcomes C797S.",why:"Evidence is preclinical and a single case. It is not an approved use after osimertinib."}
+  ],
+  report:{
+   headline:"C797S removes the anchor osimertinib needs. What helps next depends on phasing the input does not give.",
+   chain:["L858R still active","C797S removes the osimertinib anchor","Kinase keeps signalling","Options depend on phasing"],
+   compounds:[
+    {n:"Osimertinib",s:"Generation 3, covalent",st:"Approved",tx:"Binds cysteine 797. C797S impairs the covalent interaction at residue 797. Reduced activity is biologically plausible, but this does not establish the complete resistance mechanism in an individual tumor.",fit:["Weaker fit","warn"]},
+    {n:"Gefitinib, erlotinib",s:"Generation 1, reversible",st:"Approved",tx:"Approved for L858R, not for use after osimertinib. Cell-line data suggest activity may return when T790M is absent. This is preclinical.",fit:["Open question","plain"]},
+    {n:"First plus third generation",s:"Combination, proposed",st:"Investigational",tx:"Proposed for C797S and T790M on different alleles. Supported by cell-line data and two case reports. Efficacy is not established.",fit:["Depends on phasing","plain"]},
+    {n:"Allosteric class",s:"Preclinical",st:"Investigational",tx:"Active in L858R-based models. Reported models did not cover exon 19 deletion.",fit:["Investigational","plain"]}
+   ],
+   limits:["Phasing of C797S and T790M was not provided. The agent does not infer it.","C797S is one of several resistance mechanisms. MET amplification and others were not evaluated.","Evidence for options after osimertinib is mostly preclinical or case-level.","T790M is co-detected in this synthetic scenario after first-line osimertinib. This is not presented as a typical resistance pattern; the timing and biological context require case-specific verification.","Individual treatment decisions need clinical review."]
+  },
+  changes:[
+   ["Variants","L858R","L858R + C797S, with T790M co-detected"],
+   ["Reading","Sensitive to EGFR inhibitors","Resistant to osimertinib through C797S"],
+   ["Top option","Four approved inhibitors, osimertinib among them","No option clearly supported. Depends on phasing"],
+   ["Evidence level","Clinical","Mostly preclinical or case-level"],
+   ["Open question","Allele frequency missing","Are C797S and T790M on the same allele?"]
+  ],
+  notes:{say:["Open the Report tab and scroll to the phasing check. Leave it on Not provided and say: the agent refuses to guess cis or trans.","Switch the check to Cis, then Trans, and say that these answers are conditional on evidence the user supplies.","Open the Critic tab. The first rewritten claim is the abstention. The second shows cell-line data and a case report disagreeing for cis."],
+         check:["The C797S nucleotide change is not in the input on purpose. Add it from a real report if you use one.","Check the sequence strip against the reference protein before presenting.","Read the cis case report and the Niederst paper in full before presenting. The demo used abstracts and snippets only.","Confirm each preclinical or case-report source and its wording. The text here is scripted."]}
+ },
+
+ update:{
+  tab:"Evidence update", sub:"Later: new evidence arrives", runLabel:"Scan for new evidence",
+  title:"Saved report: EGFR L858R",
+  variants:[V_L858R], newVariants:[],
+  map:{active:["L858"], note:"EGFR L858R"},
+  input:[["Saved report","EGFR L858R, Visit 1"],["Report date","Simulated"],["Sources watched","PubMed, ClinicalTrials.gov, drug labels"],["Mode","Evidence monitor"]],
+  stages:[
+   S("Scan sources",["PubMed","ClinicalTrials.gov","Drug labels"],"Looked for new items on EGFR, osimertinib and first-line lung cancer.",[["Three source types scanned","ok"]]),
+   S("Match to saved reports",["Report index"],"One new item matches the Visit 1 report: EGFR L858R, first-line setting.",[["Variant matches","ok"],["Setting matches","ok"]]),
+   S("Assess impact",["Claim comparer"],"One claim is affected. The mechanism claims and the resistance claims are not.",[["Mechanism claims unchanged","ok"],["Resistance claims unchanged","ok"],["First-line claim is now incomplete","warn"]]),
+   S("Re-run critic",["Critic agent"],"The updated claim cannot be approved automatically. A person has to review it.",[["New source is a phase 3 trial and a label update","ok"],["Wording of the claim must change","warn"]],true),
+   S("Flag report",["Change log"],"Report marked Needs review, with the change log attached.",[["Old and new claim stored","ok"]],true)
+  ],
+  notes:{say:["This is the last scene. Keep it under one minute.","Show the before and after. Then say what did not change: this is what makes monitoring useful instead of noisy."],
+         check:["Verify the exact trial publication date and the drug label update date, and put the correct citation in your pitch. The text here is scripted.","If you prefer, use any other real update with a known date. The claim in the Visit 1 report must match it."]}
+ }
+};
+
+
+/* ---------------- chromatogram + protein map ---------------- */
+function chrom(v){
+  const W=640, pad=34, n=v.ref.length, step=(W-2*pad)/(n-1), s=step*0.27, H=82;
+  const bases=["A","C","G","T"];
+  function row(seq, y0, mixed){
+    const amp=(i,b)=>{
+      const called=seq[i];
+      const vary=0.82+0.18*Math.sin(i*1.9+1);
+      let a = b===called ? vary : 0.04;
+      if(mixed && i===v.idx){
+        if(b===v.alt[v.idx]) a=0.95;
+        else if(b===v.ref[v.idx]) a=0.36;
+        else a=0.04;
+      }
+      return a;
+    };
+    let out="";
+    bases.forEach(b=>{
+      let d="";
+      for(let x=0;x<=W;x+=2){
+        let y=0;
+        for(let i=0;i<n;i++){const cx=pad+i*step; y+=amp(i,b)*Math.exp(-((x-cx)**2)/(2*s*s));}
+        d+=(x?"L":"M")+x+","+(y0-Math.min(y,1.05)*H).toFixed(1);
+      }
+      out+=`<path d="${d}" class="b${b}" fill="none" stroke-width="1.8" stroke-linejoin="round"/>`;
+    });
+    for(let i=0;i<n;i++){
+      const cx=pad+i*step, L=(mixed&&i===v.idx)?v.alt[i]:seq[i];
+      out+=`<text x="${cx}" y="${y0+17}" text-anchor="middle" font-size="13" font-weight="700" class="t${L}">${L}</text>`;
+    }
+    return out;
+  }
+  const cx=pad+v.idx*step;
+  let g=`<text x="${pad-26}" y="16" font-size="12" fill="var(--ink2)">Reference</text>`;
+  g+=row(v.ref,104,false);
+  g+=`<text x="${pad-26}" y="146" font-size="12" fill="var(--ink2)">Tumor sample</text>`;
+  g+=row(v.alt,236,true);
+  g+=`<rect x="${cx-step*0.55}" y="150" width="${step*1.1}" height="98" rx="8" fill="var(--eosin)" opacity=".10"/>`;
+  g+=`<rect x="${cx-step*0.55}" y="150" width="${step*1.1}" height="98" rx="8" fill="none" stroke="var(--eosin)" stroke-width="1.6"/>`;
+  g+=`<text x="${cx}" y="146" text-anchor="middle" font-size="12" font-weight="700" fill="var(--eosin)">${v.ref[v.idx]} to ${v.alt[v.idx]}, ${v.codon}</text>`;
+  return g;
+}
+function strip(v){
+  const n=v.ref.length, W=640, pad=34, step=(W-2*pad)/n;
+  let g="";
+  [["Reference",v.ref,60,false],["Tumor sample",v.alt,160,true]].forEach(([label,seq,y,mut])=>{
+    g+=`<text x="${pad}" y="${y-14}" font-size="12" fill="var(--ink2)">${label}</text>`;
+    for(let i=0;i<n;i++){
+      const x=pad+i*step, hit=i===v.idx;
+      g+=`<rect x="${x+2}" y="${y}" width="${step-4}" height="44" rx="6" fill="${hit&&mut?"var(--eosin)":hit?"var(--eosin-soft)":"var(--hema-soft)"}"/>`;
+      g+=`<text x="${x+step/2}" y="${y+29}" text-anchor="middle" font-size="19" font-weight="700" fill="${hit&&mut?"var(--on-eosin)":"var(--ink)"}">${seq[i]}</text>`;
+      g+=`<text x="${x+step/2}" y="${y+62}" text-anchor="middle" font-size="10" fill="var(--ink2)">${v.start+i}</text>`;
+    }
+  });
+  g+=`<text x="${W/2}" y="250" text-anchor="middle" font-size="12" font-weight="700" fill="var(--eosin)">${v.ref[v.idx]} to ${v.alt[v.idx]}, ${v.codon}</text>`;
+  return g;
+}
+function pmap(active){
+  const L=1210, x=a=>20+a/L*600;
+  const marks=[
+    {k:"L858",aa:858,label:"L858R",lab:"top"},
+    {k:"T790",aa:790,label:"T790M",lab:"top"},
+    {k:"C797",aa:797,label:"C797S position",lab:"bottom"}
+  ];
+  let g=`<rect x="20" y="38" width="600" height="12" rx="6" fill="var(--hema-soft)"/>`;
+  g+=`<rect x="${x(712)}" y="34" width="${x(979)-x(712)}" height="20" rx="5" fill="var(--hema)" opacity=".85"/>`;
+  g+=`<text x="${x(845)}" y="48" text-anchor="middle" font-size="11" font-weight="700" fill="var(--on-hema)">Kinase domain</text>`;
+  g+=`<text x="20" y="76" font-size="11" fill="var(--ink2)">EGFR, 1210 amino acids</text>`;
+  marks.forEach(m=>{
+    const on=active.includes(m.k), col=on?"var(--eosin)":"var(--ink2)";
+    const xm=x(m.aa), top=m.lab==="top";
+    g+=`<line x1="${xm}" x2="${xm}" y1="${top?22:54}" y2="${top?34:66}" stroke="${col}" stroke-width="2"/>`;
+    g+=`<circle cx="${xm}" cy="${top?20:68}" r="${on?4.5:3}" fill="${col}"/>`;
+    const anchor = m.k==="T790" ? "end" : "start", dx = m.k==="T790" ? -8 : 8;
+    g+=`<text x="${xm+dx}" y="${top?24:72}" text-anchor="${anchor}" font-size="11" font-weight="${on?700:500}" fill="${col}">${m.k==="C797"&&on?"C797S":m.label}</text>`;
+  });
+  return g;
+}
+
+
+/* ---------------- state ---------------- */
+const st = {view:"walk", theme:"auto", caseId:"baseline", variant:0, run:"idle", cur:-1, open:null,
+  tab:"report", phasing:"none", filter:"all", events:[], edge:null, review:{status:"pending",text:"",at:null}, t0:0, token:0};
+const $ = id => document.getElementById(id);
+const C = () => CASES[st.caseId];
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;");
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+const SOURCES = ["CIViC","ClinVar","UniProt","PubMed","ChEMBL","ClinicalTrials.gov","Drug labels"];
+const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"");
+const short = s => s.length>60 ? s.slice(0,57)+"..." : s;
+const BLURBS = {
+  baseline:"First tumor test. Which EGFR drugs fit, and why?",
+  progression:"Progression on osimertinib. What changed, and what can the agent not conclude?",
+  update:"Months later, new evidence arrives. Which saved claims does it touch?"
+};
+const ABST = {baseline:0, progression:1, update:0};
+
+/* ---------------- theme ---------------- */
+function applyTheme(t){
+  st.theme=t;
+  const r=document.documentElement;
+  if(t==="auto") r.removeAttribute("data-theme"); else r.setAttribute("data-theme",t);
+  document.querySelectorAll("[data-theme-btn]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.themeBtn===t));
+}
+
+/* ---------------- small helpers ---------------- */
+const lvlPill = l => l?`<span class="pill p-plain">${l}</span>`:"";
+const stPill = s => ({verified:'<span class="pill p-ok">Retained · not independently verified</span>',hypothesis:'<span class="pill p-warn">Hypothesis</span>',revised:'<span class="pill p-hema">Rewritten by critic</span>',removed:'<span class="pill p-bad">Removed by critic</span>',review:'<span class="pill p-bad">Needs review</span>'})[s];
+function claimCounts(c){
+  const k={verified:0,revised:0,hypothesis:0,removed:0};
+  (c.claims||[]).forEach(x=>k[x.st]++);
+  return k;
+}
+
+/* ---------------- renderers ---------------- */
+function renderHero(){
+  const c=C(), v=c.variants[st.variant]||c.variants[0], prot=v.kind==="protein";
+  $("hBlurb").textContent=BLURBS[st.caseId];
+  $("hTitle").textContent=c.title;
+  $("hMeta").innerHTML=c.variants.length===1 || st.caseId==="update"
+    ? `<span><b>${v.c}</b> ${v.p}</span><span>Exon ${v.exon}, non-small cell lung cancer</span>`
+    : `<span><b>${c.variants.map(x=>x.id).join(" + ")}</b> on transcript NM_005228.5</span><span>${c.meta2||"Non-small cell lung cancer"}</span>`;
+  $("hChips").innerHTML=c.variants.map((x,i)=>`<button class="vchip" data-i="${i}" aria-pressed="${i===st.variant}">${x.id}${(c.newVariants||[]).includes(x.id)?'<span class="new" title="New in this sample"></span>':''}</button>`).join("");
+  $("plateTitle").textContent=prot?`${v.id}: reference against tumor sample, protein level`:`${v.id}: reference against tumor sample`;
+  $("plateSub").textContent=prot?`Illustrative protein sequence around ${v.codon}; not a tumor-derived protein read.`:`Illustrative sequence trace around ${v.codon}; not raw sequencing data or a measured chromatogram.`;
+  $("legend").innerHTML=prot?"":["A","C","G","T"].map(b=>`<span><i style="background:var(--base${b})"></i>${b}</span>`).join("");
+  $("chrom").innerHTML=prot?strip(v):chrom(v);
+  $("chrom").setAttribute("aria-label",prot?`Illustrative protein sequence showing ${v.ref[v.idx]} to ${v.alt[v.idx]} at ${v.codon}; not sample data`:`Illustrative synthetic trace showing ${v.ref[v.idx]} to ${v.alt[v.idx]} at ${v.codon}; not raw sequencing data`);
+  $("pmap").innerHTML=pmap(c.map.active);
+}
+function renderVisits(){
+  $("visits").innerHTML=Object.entries(CASES).map(([k,c],i)=>`<button id="case-tab-${k}" role="tab" data-k="${k}" aria-controls="walk" aria-selected="${k===st.caseId}"><small>0${i+1}</small><b>${c.tab}</b><span>${c.sub}</span></button>`).join("");
+}
+function stageState(i){
+  const c=C();
+  if(st.run==="idle") return "pending";
+  if(st.run==="running") return i<st.cur?(c.stages[i].flag?"flag":"done"):i===st.cur?"running":"pending";
+  return c.stages[i].flag?"flag":"done";
+}
+function renderStages(){
+  const c=C(), k=claimCounts(c);
+  $("runBtn").textContent = st.run==="running" ? "Running…" : st.run==="done" ? "Run again" : c.runLabel;
+  $("runBtn").disabled = st.run==="running";
+  $("runNote").textContent = st.run==="idle" ? "" : st.run==="running" ? "Each stage checks its own work." : "Finished. Open any stage.";
+  $("stages").innerHTML=c.stages.map((s,i)=>{
+    const state=stageState(i), open=st.open===i && state!=="pending" && state!=="running";
+    const sum = s.summary==="@verify" ? `${k.verified+k.revised+k.hypothesis+k.removed} claims assessed: ${k.verified} retained (not independently verified), ${k.revised} rewritten, ${k.hypothesis} kept as hypothesis, ${k.removed} removed.` : s.summary;
+    const nsrc = s.tools.filter(t=>SOURCES.includes(t)).length;
+    return `<li class="stage s-${state}">
+      <span class="node" aria-hidden="true">${state==="done"?"✓":state==="flag"?"!":i+1}</span>
+      <button data-i="${i}" aria-expanded="${open}"><span class="sname">${s.name}</span>${state==="pending"?"":`<span class="ssum">${esc(sum)}</span>`}</button>
+      ${open?`<div class="sdetail"><div class="tools">${s.tools.map(t=>`<span class="${SOURCES.includes(t)?"src":""}">${t}</span>`).join("")}</div>
+        <p class="note" style="margin:8px 0 0">${nsrc} source${nsrc===1?"":"s"} planned for this stage</p>
+        <ul>${s.checks.map(ch=>`<li class="${ch[1]}">${ch[0]}</li>`).join("")}</ul></div>`:""}
+    </li>`;
+  }).join("");
+}
+function renderEvents(){
+  const el=$("evlog");
+  el.innerHTML=st.events.map(e=>`<div><span>+${(e.t/1000).toFixed(1)}s</span><b class="${/abstained|removed|revised/.test(e.type)?"bad":""}">${e.type}</b><span>${esc(e.detail)}</span></div>`).join("");
+  el.scrollTop=el.scrollHeight;
+}
+function renderInput(){
+  $("input").innerHTML=C().input.map(([k,v])=>`<div><dt>${k}</dt><dd>${v}</dd></div>`).join("");
+}
+function tabsFor(){
+  return st.caseId==="update" ? [["impact","Impact"],["evidence","What did not change"]]
+    : st.caseId==="progression" ? [["report","Report"],["map","Resistance map"],["changes","What changed"],["evidence","Evidence"],["critic","Critic"]]
+    : [["report","Report"],["map","Resistance map"],["evidence","Evidence"],["critic","Critic"]];
+}
+function phasingBlock(){
+  if(st.caseId!=="progression") return "";
+  const o={
+    none:["The agent does not conclude cis or trans.","Phasing requires adequate molecular evidence linking both loci on the same molecule or haplotype, with sufficient coverage and assay-aware interpretation. Co-detection alone is not enough. Until then the options above stay conditional."],
+    cis:["User-supplied: same allele (cis).","In cell-line models no inhibitor tested suppressed cis cells, alone or combined. One case report describes a clinical response in cis, which points the other way. Clinical benefit in cis is not established. This is not a recommendation."],
+    trans:["User-supplied: different alleles (trans).","In cell-line models trans cells stayed sensitive to a first- plus third-generation combination. Two case reports describe clinical improvement, one brief and one lasting about 3 months before C797S appeared in cis. Trans assignment depends on the method, and separate subclones are an alternative explanation. Clinical efficacy is not established, and this needs clinical review."]
+  }[st.phasing];
+  const b=(k,l)=>`<button data-ph="${k}" aria-pressed="${st.phasing===k}">${l}</button>`;
+  return `<div class="phase"><h3>Phasing check</h3><div style="font-size:var(--fs-s);color:var(--ink2)">Is T790M on the same allele as C797S? The agent only uses phasing evidence you provide.</div>
+  <div class="seg" style="margin-top:10px" role="group" aria-label="Phasing evidence provided">${b("none","Not provided")}${b("cis","Cis")}${b("trans","Trans")}</div>
+  <p><b>${o[0]}</b></p><p>${o[1]}</p></div>`;
+}
+function viewReport(c){
+  const r=c.report, k=claimCounts(c);
+  return `<div class="stats">
+    <div class="stat ok"><b>${k.verified}</b><span>Retained claims · source review shown below</span></div>
+    <div class="stat warn"><b>${k.hypothesis}</b><span>Kept as hypothesis</span></div>
+    <div class="stat hema"><b>${k.revised}</b><span>Rewritten by critic</span></div>
+    <div class="stat bad"><b>${k.removed}</b><span>Removed by critic</span></div>
+    <div class="stat"><b>${ABST[st.caseId]}</b><span>Abstentions</span></div></div>
+  <h2 class="headline">${r.headline}</h2>
+  <div class="chain" aria-label="Mechanism">${r.chain.map((x,i)=>`<div class="${i===r.chain.length-1?"end":""}">${x}</div>`).join("")}</div>
+  <h3 class="sec">Compounds discussed</h3><p class="note">Regulatory status refers to an approved indication in general, not approval for the acquired-resistance scenario shown here. Evidence fit is assessed separately below.</p>
+  <div class="rows">${r.compounds.map(x=>`<div class="row"><div class="nm">${x.n}<small>${x.s}</small></div><div class="tx">${x.tx}</div><div><span class="pill ${x.st==="Approved"?"p-hema":"p-warn"}">Regulatory: ${x.st}</span> <span class="pill p-${x.fit[1]}">Scenario fit: ${x.fit[0]}</span></div></div>`).join("")}</div>
+  ${phasingBlock()}
+  <div class="limits"><b>Limits of this report</b><ul>${r.limits.map(l=>`<li>${l}</li>`).join("")}</ul></div>
+  ${manifestBlock()}`;
+}
+function viewEvidence(c){
+  const k=claimCounts(c), n=k.verified+k.revised+k.hypothesis;
+  const F=[["all","All"],["verified","Retained"],["hypothesis","Hypothesis"],["revised","Rewritten"]];
+  const list=c.claims.filter(x=>x.st!=="removed" && (st.filter==="all"||x.st===st.filter));
+  return `<p class="summary">${n} claims in the report: ${k.verified} retained (not independently verified), ${k.revised} rewritten by the critic, ${k.hypothesis} marked as hypothesis. ${k.removed} draft claim${k.removed===1?"":"s"} removed.</p>
+  <div class="fchips" role="group" aria-label="Filter claims">${F.map(f=>`<button data-f="${f[0]}" aria-pressed="${st.filter===f[0]}">${f[1]}</button>`).join("")}</div>
+  ${list.length?list.map(claimRow).join(""):'<p class="summary">No claims in this filter.</p>'}`;
+}
+function viewCritic(c){
+  const items=c.claims.filter(x=>x.draft);
+  const checks=c.stages.find(s=>s.flag).checks;
+  return `<p class="summary">The critic view is a scripted illustration of claim revision. The displayed source summaries are authored demo text, not live retrieval or independent source verification.</p>
+  ${items.map(x=>`<div class="claim"><div><s class="draft">${esc(x.draft)}</s></div>
+    ${SAID[x.draft]?`<div class="said"><b>Scripted source summary</b>${SAID[x.draft]}</div>`:""}
+    ${x.st==="revised"?`<div style="margin-top:6px"><span class="arrow">Now:</span> ${esc(x.t)}</div>`:""}
+    <div class="meta">${stPill(x.st)} <span>${x.why}</span></div></div>`).join("")}
+  <h3 class="sec" style="margin-top:26px">Questions the critic asked</h3>
+  <div class="sdetail" style="padding-left:0"><ul>${checks.map(ch=>`<li class="${ch[1]}">${ch[0]}</li>`).join("")}</ul></div>`;
+}
+function viewChanges(c){
+  return `<p class="summary">The agent compared Visit 2 with the Visit 1 report and listed what moved.</p>
+  <div class="diff head"><div></div><div>Visit 1</div><div>Visit 2</div></div>
+  ${c.changes.map(r=>`<div class="diff"><div class="k">${r[0]}</div><div>${r[1]}</div><div><span class="arrow">→</span> ${r[2]}</div></div>`).join("")}`;
+}
+function rvPill(){
+  const m={pending:'<span class="pill p-bad">Needs review</span>',approved:'<span class="pill p-ok">Approved by reviewer</span>',edited:'<span class="pill p-hema">Edited by reviewer</span>',rejected:'<span class="pill p-plain">Rejected by reviewer</span>',editing:'<span class="pill p-bad">Needs review</span>'};
+  return m[st.review.status];
+}
+function reviewBlock(){
+  const r=st.review, sug=SUGGESTED;
+  let body="";
+  if(r.status==="pending") body=`<input class="rvtext" id="rvComment" style="min-height:0;height:40px" placeholder="Review comment (optional)" aria-label="Review comment"><div class="rvbtns"><button class="ok" data-rv="approve">Approve</button><button class="bad" data-rv="reject">Reject</button><button data-rv="edit">Edit</button></div>`;
+  else if(r.status==="editing") body=`<textarea class="rvtext" id="rvText" aria-label="Edit the claim">${esc(r.text||sug)}</textarea><div class="rvbtns"><button class="ok" data-rv="save">Save edit</button><button data-rv="cancel">Cancel</button></div>`;
+  else body=`<div class="rvbtns"><button data-rv="undo">Undo decision</button></div><div class="audit">Decision: ${r.status}. Reviewer: demo user. Time: ${r.at}.<br>Original: ${esc(ORIGINAL)}<br>${r.status==="edited"?"Revised wording: "+esc(r.text)+"<br>":r.status==="approved"?"Approved wording: "+esc(SUGGESTED)+"<br>":""}${r.comment?"Comment: "+esc(r.comment)+"<br>":""}Simulated local action only — not persisted, signed, or stored in an audit backend.</div>`;
+  return `<div class="review"><h4>Reviewer sign-off</h4><p class="summary" style="margin:0">This control simulates a reviewer decision locally. It is not authenticated, signed, persisted, or suitable for a real clinical or research audit trail.</p>${body}</div>`;
+}
+function viewImpact(){
+  const r=st.review, now=(r.status==="edited"&&r.text)?r.text:SUGGESTED;
+  const afterTitle=r.status==="pending"||r.status==="editing"?"Suggested, waiting for a person":r.status==="rejected"?"Suggestion rejected, original kept":"Current wording";
+  const afterText=r.status==="rejected"?"At the report date, first-line options were EGFR inhibitor monotherapy.":now;
+  return `<div class="upd"><h4>New evidence found</h4>
+    <p>Illustrative update scenario based on FLAURA2: osimertinib combined with platinum-pemetrexed chemotherapy in first-line EGFR-mutated advanced NSCLC. This prototype does not retrieve or verify the trial publication or regulatory label. Confirm the exact population, jurisdiction, publication date and current label before relying on this update.</p></div>
+  <h3 class="sec">Affected claim in the saved report</h3>
+  <div class="ba">
+    <div><h5>Before, at report date</h5><p>At the report date, first-line options were EGFR inhibitor monotherapy.</p></div>
+    <div class="after"><h5>${afterTitle}</h5><p>${esc(afterText)}</p></div>
+  </div>
+  <div class="rows">
+    <div class="row"><div class="nm">Claim<small>First-line options</small></div><div class="tx">Became incomplete after the update.</div><div>${rvPill()}</div></div>
+    <div class="row"><div class="nm">Osimertinib<small>Active ingredient</small></div><div class="tx">The illustrative update adds this regimen to the scenario. Its current regulatory status must be checked for the relevant jurisdiction and population.</div><div><span class="pill p-warn">Source check needed</span></div></div>
+    <div class="row"><div class="nm">Evidence level<small>Clinical</small></div><div class="tx">The scenario represents a phase 3 evidence update. The source record and regulatory details still require independent verification.</div><div><span class="pill p-warn">Needs source check</span></div></div>
+  </div>
+  ${reviewBlock()}
+  <div class="limits"><b>Before you present</b><ul><li>This is a simulated update, not a live alert. Add the primary trial citation and the applicable regulator label with dates and jurisdiction before presenting it as a verified update.</li></ul></div>`;
+}
+function viewUnchanged(){
+  const c=CASES.baseline.claims.filter(x=>x.st!=="removed"&&!/first-line/.test(x.t));
+  return `<p class="summary">These claims were checked against the new item and stay as they were. Saying what did not change keeps alerts useful.</p>
+  ${c.map(x=>`<div class="claim"><div>${esc(x.t)}</div><div class="meta"><span class="pill p-ok">Unchanged</span> ${lvlPill(x.lv)}</div></div>`).join("")}`;
+}
+/* ---------------- v3 data: source summaries, relations, manifest ---------------- */
+const ORIGINAL="At the report date, first-line options were EGFR inhibitor monotherapy.";
+const SUGGESTED="First-line options include EGFR inhibitor monotherapy and osimertinib combined with platinum-pemetrexed chemotherapy.";
+// Short scripted summaries of what the source said. In the real build each carries an identifier and a link.
+const SAID={
+  "These drugs will work for this tumor.":"Labels describe approval for patients with these mutations and trial results at group level. They do not promise benefit for one tumor.",
+  "Osimertinib is effective against every EGFR mutation.":"Labels list specific mutations. Exon 20 insertions are a different case.",
+  "C797S and T790M are in cis, so no EGFR inhibitor will work.":"A cell-line study reports resistance to the inhibitors tested in cis. Cohorts report both cis and trans. Nothing in the input says which applies.",
+  "No treatment can work when the variants are in cis.":"A cell-line study found no inhibitor suppressed cis cells. One case report describes a clinical response in cis. The two point in different directions.",
+  "Gefitinib overcomes C797S.":"Cell-line data describe activity without T790M, and one case report exists. No approval or trial supports use after osimertinib."
+};
+// Sources read in this project. Only abstracts or snippets were reviewed for this prototype. Full texts and claim-to-source support have not been independently verified.
+const SRC={
+  niederst2015:{label:"Niederst et al., Clin Cancer Res 2015 (cell lines)",id:"PMID 25964297",url:"https://pubmed.ncbi.nlm.nih.gov/25964297/"},
+  arulananda2017:{label:"Case report: osimertinib plus gefitinib, trans",id:"PMID 28843359",url:"https://pubmed.ncbi.nlm.nih.gov/28843359/"},
+  trans2017:{label:"Case report: trans C797S, shift to cis at progression",id:"PMID 28662863",url:"https://read.qxmd.com/read/28662863/"},
+  cis_case:{label:"Case report: cis C797S with combination therapy",id:"QIMS article 113578",url:"https://qims.amegroups.org/article/view/113578/html"},
+  review2016:{label:"Review, J Hematol Oncol 2016",id:"PMC4957905",url:"https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4957905/"},
+  reviewPhased:{label:"Review of third-generation TKI resistance",id:"PMC5233880",url:"https://pmc.ncbi.nlm.nih.gov/articles/PMC5233880"},
+  drugs2022:{label:"Shah and Neal, Drugs 2022 (review)",id:"DOI 10.1007/s40265-022-01698-z",url:"https://doi.org/10.1007/s40265-022-01698-z"},
+  leone:{label:"Commentary: in trans or in separate clones?",id:"PMID 29425614",url:"https://pubmed.ncbi.nlm.nih.gov/29425614/"}
+};
+const BASE_AS=["supported","supported","supported","supported","supported","supported","supported","partially_supported",null];
+const BASE_CHK=["none","none","none","none","none","none","abstract","none",null];
+CASES.baseline.claims.forEach((c,i)=>{ c.as=BASE_AS[i]; c.chk=BASE_CHK[i]; });
+CASES.baseline.claims[6].src="Review PMC4957905";
+const asPill=a=>({supported:'<span class="pill p-ok">Assessment: supports</span>',partially_supported:'<span class="pill p-warn">Assessment: partly supports</span>',unsupported:'<span class="pill p-bad">Assessment: does not support</span>',insufficient_information:'<span class="pill p-plain">Assessment: insufficient information</span>'})[a]||"";
+const chkPill=c=>c==="abstract"?'<span class="pill p-plain">Source review: abstract only</span>':c==="full"?'<span class="pill p-ok">Source review: full text</span>':'<span class="pill p-warn">Source review: not checked</span>';
+function claimRow(x){ return `<div class="claim"><div>${esc(x.t||x.draft)}</div><div class="meta">${stPill(x.st)} ${asPill(x.as)} ${lvlPill(x.lv)} ${x.src?chkPill(x.chk):""}<span>${x.src?"Source: "+x.src:""}</span></div></div>`; }
+const NODE=(id,label,sub,x,y,kind)=>({id,label,sub,x,y,kind});
+CASES.baseline.rmap={h:300,nodes:[
+  NODE("a","L858R","Original driver",20,100,"var"),
+  NODE("b","Kinase stays active","Signals without a ligand",235,100,"mech"),
+  NODE("c","EGFR inhibitors","Approved options",450,100,"drug"),
+  NODE("d","Resistance","T790M, C797S",450,225,"res")],
+ edges:[
+  {id:"e1",from:"a",to:"b",label:"Keeps the kinase active",said:"Structural and biochemical reports place L858R in the kinase activation loop and show higher kinase activity.",assess:"Supports the interpretation. Same variant.",claims:[0,1,2],ctx:"yes",
+   explain:"L858R sits in the activation loop and favors the active shape of the kinase, so growth signals continue.",missing:["Allele frequency was not provided"]},
+  {id:"e2",from:"b",to:"c",label:"Blocked by",said:"Drug labels list approval of these inhibitors for lung cancer with L858R or exon 19 deletion, based on group-level trial results.",assess:"Supports approval status. Does not support a claim about any single tumor.",claims:[3,4],ctx:"yes",
+   explain:"Approved EGFR inhibitors block the ATP pocket of the active kinase. Benefit is shown at group level, not guaranteed for one tumor.",missing:["Patient-level response is out of scope"]},
+  {id:"e3",from:"c",to:"d",label:"Can be followed by",refs:["review2016"],said:"Reports describe T790M among the mechanisms found after EGFR inhibitor treatment.",assess:"Partly supports. It is one mechanism among several.",claims:[6],ctx:"partly",dashed:true,
+   explain:"Resistance can develop under treatment. T790M is a well-known mechanism. Other mechanisms exist and are not evaluated at baseline.",missing:["Which mechanism, if any, appears is unknown at baseline"]}
+]};
+CASES.progression.rmap={h:330,nodes:[
+  NODE("a","L858R","Original driver",20,40,"var"),
+  NODE("b","Osimertinib","First-line therapy",235,40,"drug"),
+  NODE("c","C797S","New finding",450,40,"new"),
+  NODE("d","T790M","Co-detected",450,235,"new"),
+  NODE("e","Other options","Preclinical or single case",235,235,"opt")],
+ edges:[
+  {id:"e1",from:"a",to:"b",label:"Treated with",claims:[],refs:[],ctx:"input",
+   said:"None. This comes from the case input.",assess:"Not assessed. No source is involved.",
+   explain:"The original driver and the first-line therapy come from the case input. The agent did not retrieve them.",
+   missing:["Response duration and dose are not part of the input"]},
+  {id:"e2",from:"c",to:"b",label:"Blocks binding of",claims:[0,1,2],refs:["review2016","drugs2022","reviewPhased"],ctx:"yes",
+   said:"Reviews describe osimertinib bonding covalently to cysteine 797 and loss of that bond when C797S arises. Cohorts show C797S in some, not all, resistant cases.",
+   assess:"Supports the interpretation for the same variant and drug.",
+   explain:"Osimertinib bonds covalently to cysteine 797. C797S impairs the covalent interaction at residue 797 and can contribute to resistance. Other resistance mechanisms may coexist.",
+   missing:["Nucleotide change for C797S was not given"]},
+  {id:"e3",from:"c",to:"d",label:"Phasing unknown",claims:[3,4,7,10,11],refs:["niederst2015","reviewPhased","cis_case"],dashed:true,ctx:"unknown",
+   said:"A cell-line study reports different drug sensitivity for cis and trans. Cohorts report both configurations. One case report describes a response in cis, against the cell-line result.",
+   assess:"Supports a conditional statement only. Does not support choosing cis or trans, or a firm claim about cis.",
+   explain:"Whether the two variants sit on the same allele changes which options make sense. The input does not say, so the agent does not conclude cis or trans.",
+   missing:["Sequencing reads that cover both sites","Or long-read data from the same sample"]},
+  {id:"e4",from:"c",to:"e",label:"Options studied",claims:[5,6,8,9],refs:["niederst2015","arulananda2017","trans2017","leone"],dashed:true,ctx:"partly",
+   said:"Cell-line data and two case reports describe a first- plus third-generation combination in trans, and first-generation activity without T790M. A commentary asks whether trans means separate clones.",
+   assess:"Weak to moderate. Cell lines and single cases. Kept as hypothesis. Clinical efficacy is not established.",
+   explain:"Reversible first-generation inhibitors, a first- plus third-generation combination and allosteric compounds are discussed. Evidence is cell-line data and single cases, so it stays hypothesis.",
+   missing:["No approved use after osimertinib","The allosteric claim is not verified yet","Reported allosteric models did not cover exon 19 deletion"]}
+]};
+
+function viewMap(c){
+  const m=c.rmap, W=640, H=m.h, NW=170, NH=60;
+  if(!m.edges.some(e=>e.id===st.edge)) st.edge=m.edges[0].id;
+  const sel=m.edges.find(e=>e.id===st.edge), by=Object.fromEntries(m.nodes.map(n=>[n.id,n]));
+  const cl=(n,tx,ty)=>{const cx=n.x+NW/2, cy=n.y+NH/2, dx=tx-cx, dy=ty-cy; const t=Math.min((NW/2+5)/(Math.abs(dx)||1e-6),(NH/2+5)/(Math.abs(dy)||1e-6)); return [cx+dx*t, cy+dy*t];};
+  const fill={var:"var(--hema-soft)",mech:"var(--hema-soft)",drug:"var(--surface2)",new:"var(--eosin-soft)",res:"var(--eosin-soft)",opt:"var(--surface2)"};
+  const edges=m.edges.map(e=>{
+    const a=by[e.from], b=by[e.to], acx=a.x+NW/2, acy=a.y+NH/2, bcx=b.x+NW/2, bcy=b.y+NH/2;
+    const [x1,y1]=cl(a,bcx,bcy), [x2,y2]=cl(b,acx,acy), on=e.id===st.edge, col=on?"var(--eosin)":"var(--ink2)";
+    const mx=(x1+x2)/2, my=(y1+y2)/2, w=e.label.length*6.4+16;
+    return `<g class="edge" data-e="${e.id}" tabindex="0" role="button" aria-pressed="${on}" aria-label="Relation: ${e.label}">
+      <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="transparent" stroke-width="22"/>
+      <line class="eline" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="${on?3:2}" ${e.dashed?'stroke-dasharray="6 5"':""} marker-end="url(#${on?"ahOn":"ahOff"})"/>
+      <rect x="${mx-w/2}" y="${my-11}" width="${w}" height="22" rx="11" fill="${on?"var(--eosin)":"var(--surface)"}" stroke="${on?"var(--eosin)":"var(--line)"}"/>
+      <text x="${mx}" y="${my+4}" text-anchor="middle" font-size="11" font-weight="700" fill="${on?"var(--on-eosin)":"var(--ink)"}">${e.label}</text></g>`;
+  }).join("");
+  const nodes=m.nodes.map(n=>`<g><rect x="${n.x}" y="${n.y}" width="${NW}" height="${NH}" rx="12" fill="${fill[n.kind]}" stroke="${n.kind==="opt"?"var(--ink2)":"var(--line)"}" ${n.kind==="opt"?'stroke-dasharray="5 4"':""}/>
+    <text x="${n.x+NW/2}" y="${n.y+27}" text-anchor="middle" font-size="16" font-weight="700" fill="var(--ink)">${n.label}</text>
+    <text x="${n.x+NW/2}" y="${n.y+46}" text-anchor="middle" font-size="11" fill="var(--ink2)">${n.sub}</text></g>`).join("");
+  const ctxP={yes:'<span class="pill p-ok">Same variant and setting</span>',partly:'<span class="pill p-warn">Related setting only</span>',unknown:'<span class="pill p-bad">Setting unknown</span>',input:'<span class="pill p-plain">From user input, not retrieved</span>'}[sel.ctx];
+  const claims=sel.claims.map(i=>c.claims[i]);
+  return `<p class="summary">The map is a view over the claims in this report. Select a relation to see what supports it. A relation with no claim behind it is marked as coming from the input.</p>
+  <div class="mapwrap"><svg viewBox="0 0 ${W} ${H}" role="group" aria-label="Resistance map">
+    <defs><marker id="ahOff" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--ink2)"/></marker>
+    <marker id="ahOn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--eosin)"/></marker></defs>
+    ${edges}${nodes}</svg></div>
+  <div class="mapdetail"><h3>${sel.label}</h3>
+    <div class="tagrow">${ctxP}<span class="pill p-plain">Conflict review: not performed in this prototype</span></div>
+    ${(sel.refs||[]).length?`<div class="said"><b>Sources</b>${sel.refs.map(k=>`<a href="${SRC[k].url}" target="_blank" rel="noopener">${SRC[k].label}</a> (${SRC[k].id})`).join("; ")}. Review level recorded in this prototype: abstract or snippet only; no full-text verification.</div>`:'<div class="said"><b>Sources</b>None retrieved for this relation.</div>'}
+    <div class="said"><b>Scripted source summary</b>${sel.said} <i>(Authored demo summary — not a retrieved quotation or source excerpt.)</i></div>
+    <div class="said"><b>Agent interpretation</b>${sel.explain}</div>
+    <div class="said"><b>Evidence assessment</b>${sel.assess}</div>
+
+    ${claims.length?claims.map(claimRow).join(""):'<p class="summary">No retrieved claim supports this relation. It comes from the case input.</p>'}
+    <h3 class="sec" style="margin-top:20px;font-size:var(--fs-b)">Still missing</h3>
+    <ul style="margin:0;padding-left:20px;font-size:var(--fs-m)">${sel.missing.map(x=>`<li>${x}</li>`).join("")}</ul></div>`;
+}
+function fnv(s){let h=2166136261;for(const ch of s){h^=ch.charCodeAt(0);h=Math.imul(h,16777619);}return (h>>>0).toString(16).padStart(8,"0");}
+function manifestBlock(){
+  const c=C(), rows=[
+    ["Run id","demo-"+st.caseId+"-001","scripted"],
+    ["Mode","Scripted demo","live or replay in the real build"],
+    ["Input snapshot",fnv(JSON.stringify(c.input)),"FNV-1a demo checksum only; not a security or integrity proof"],
+    ["Model ID and settings","Not applicable","recorded for every node"],
+    ["Prompt versions","Not applicable","recorded for every node"],
+    ["Sources and study identifiers","Not recorded","name, identifier, release and retrieval time"],
+    ["Retrieved content","Not recorded","a stored copy or at least a content hash"],
+    ["Tool calls and results","Not recorded","arguments hash, result hash, start and end time"],
+    ["Critic loops","1","limit of 2 in the real build"]];
+  return `<details class="manifest"><summary>Run manifest</summary><p class="note" style="margin-top:8px">Illustrative manifest schema. This demo does not create a durable audit record or verify source retrieval.</p>
+    <div class="mtable">${rows.map(r=>`<div><span>${r[0]}</span><b>${r[1]}</b><small>${r[2]}</small></div>`).join("")}</div>
+    <div class="mtable" style="margin-top:12px"><div><span>Replay</span><b>Show the recorded run</b><small>Same inputs, sources and results as stored. No model or tool call. Always available.</small></div>
+    <div><span>Re-run</span><b>Run the analysis again</b><small>Same input, new execution, then compare with the recorded result. Generative models may give a different answer, so the difference is shown.</small></div></div></details>`;
+}
+function failBlock(){
+  const cats=["Wrong variant-to-drug link","Citation does not support the claim","Missed contradiction","Cis or trans stated without evidence","Unaffected conclusion changed on update","Mechanism misread"];
+  const cols=["Input","Expected","Actual","Category","Cause","Fixed and re-tested"];
+  return `<h3 class="sec" style="margin-top:44px">Where it fails</h3>
+  <p class="summary">This log lists only failures observed in real benchmark runs. Nothing is invented or expected in advance. Each entry records the input, the expected and actual result, a category, the cause, and whether the fix passed a re-test.</p>
+  <div class="rows"><div class="row" style="grid-template-columns:repeat(6,1fr);font-size:var(--fs-s);color:var(--ink2)">${cols.map(x=>`<div>${x}</div>`).join("")}</div>
+  <div class="row" style="grid-template-columns:1fr"><div class="tx"><span class="pill p-plain">No runs yet</span> The first entries appear after the first benchmark run.</div></div></div>
+  <p class="note" style="margin-top:14px">Categories used to classify failures: ${cats.join(", ")}.</p>`;
+}
+function renderResults(){
+  const c=C();
+  if(st.run!=="done"){
+    $("results").innerHTML = st.run==="running"
+      ? `<div class="empty"><b>The agent is working</b>The report appears when the critic approves it.<div class="sk" style="width:90%;margin-top:22px"></div><div class="sk" style="width:72%"></div><div class="sk" style="width:81%"></div><div class="sk" style="width:55%"></div></div>`
+      : `<div class="empty"><b>Nothing run yet</b>${st.caseId==="update"?"Press Scan for new evidence. The agent checks saved reports against new publications and labels.":"Press Run agent. It receives only the fields above and has to find everything else in its sources."}</div>`;
+    return;
+  }
+  const tabs=tabsFor();
+  if(!tabs.some(t=>t[0]===st.tab)) st.tab=tabs[0][0];
+  const body = st.caseId==="update" ? (st.tab==="impact"?viewImpact():viewUnchanged())
+    : st.tab==="report"?viewReport(c):st.tab==="map"?viewMap(c):st.tab==="evidence"?viewEvidence(c):st.tab==="critic"?viewCritic(c):viewChanges(c);
+  $("results").innerHTML=`<div class="tabs" role="tablist" aria-label="Results">${tabs.map(t=>`<button id="tab-${t[0]}" role="tab" data-t="${t[0]}" aria-controls="result-panel" tabindex="${st.tab===t[0]?0:-1}" aria-selected="${st.tab===t[0]}">${t[1]}</button>`).join("")}</div><div id="result-panel" role="tabpanel" aria-labelledby="tab-${st.tab}" tabindex="0">${body}</div>`;
+}
+function renderNotes(){
+  const n=C().notes;
+  $("notes").innerHTML=`<summary>Presenter notes</summary><ul>${n.say.map(x=>`<li>${x}</li>`).join("")}</ul><p style="margin:12px 0 4px"><b>Check before presenting</b></p><ul>${n.check.map(x=>`<li>${x}</li>`).join("")}</ul>`;
+}
+const DRAFT=[["MT-001","No mechanism given","Abstain",true],["MT-002","C797S alone","Explain the mechanism with causal caution",false],["MT-003","C797S and T790M, phasing unknown","Abstain on cis or trans",true],["MT-004","C797S and T790M, cis supplied","Use supplied phasing. Keep cell-line data and case report apart",false],["MT-005","C797S and T790M, trans supplied","Keep cell-line data, case reports and clinical efficacy apart",false]];
+function draftCases(){
+  return `<h3 class="sec" style="margin-top:36px">Benchmark v0.3 (draft)</h3>
+  <p class="summary">Five synthetic cases. Expected answers are drafts until a domain expert and an independent second reviewer have checked them against the sources. Nothing has been run.</p>
+  <div class="rows">${DRAFT.map(d=>`<div class="row"><div class="nm" style="font-size:var(--fs-b)">${d[0]}<small>${d[1]}</small></div><div class="tx">${d[2]}</div><div>${d[3]?'<span class="pill p-hema">Expects abstention</span> ':''}<span class="pill p-plain">Not reviewed</span> <span class="pill p-plain">Not run</span></div></div>`).join("")}</div>
+  <div class="limits"><b>Scoring rules</b><ul><li>Each case is scored out of 10.</li><li>Any forbidden conclusion caps the case at 4 out of 10 and is logged as a failure.</li><li>Two raters score blind. A language model may pre-screen but never decides.</li><li>Still to cover: a report update, a case that needs a full answer, and an approved versus investigational case.</li></ul></div>`;
+}
+function renderProof(){
+  const B=BENCHMARK, hasCases=B.cases!=null;
+  const bar=(label,v,cls)=> v==null
+    ? `<div class="bar2 none ${cls}"><span>${label}</span><i></i><span style="color:var(--ink2)">Pending</span></div>`
+    : `<div class="bar2 ${cls}"><span>${label}</span><i><u style="width:${v}%"></u></i><b>${v}%</b></div>`;
+  const row=(m,i)=>`<div class="metric ${i===0?"first":""}"><div><b>${m.name}</b><br><small style="color:var(--ink2)">${m.better==="lower"?"Lower is better":"Higher is better"}</small></div>
+    <div>${bar("A General LLM",m.a,"llm")}${bar("B LLM + CIViC MCP",m.b,"db")}${bar("C MolTarget",m.c,"mt")}</div></div>`;
+  $("proof").innerHTML=`<h2>How we will measure the difference</h2>
+  <p class="lead">${hasCases?`All three systems answered the same ${B.cases} cases.`:"Benchmark plan only. No comparative run has been completed, so this page reports no measured performance results."}</p>
+  <div class="statusrow">
+    <div><b>A General LLM</b><span class="pill p-plain">Not yet run</span></div>
+    <div><b>B LLM + CIViC MCP</b><span class="pill p-warn">Integration pending</span></div>
+    <div><b>C MolTarget AI</b><span class="pill p-warn">Scripted demo only. Agent not built yet.</span></div>
+    <div><b>Benchmark cases</b><span class="pill p-warn">5 drafted · 0 reviewed · 0 run</span></div>
+  </div>
+  ${B.metrics.map(row).join("")}
+  ${draftCases()}
+  <div class="cols">
+    <div><h3>Retrieval is not the same as analysis</h3><ul>
+      <li><b>CIViC retrieval (system B):</b> finds evidence items and assertions for a variant and disease, with links to check.</li>
+      <li><b>What we test in MolTarget:</b> whether structured resistance analysis, claim-level verification, abstention and report change tracking add value on top of retrieval.</li>
+      <li>This is a hypothesis. System B may win on some tasks, and we report that.</li></ul></div>
+    <div><h3>How the comparison stays fair</h3><ul>
+      <li>Same inputs, same questions, same sources where possible.</li>
+      <li>Scoring criteria are fixed before any run.</li>
+      <li>Results are scored independently, not by the system itself.</li>
+      <li>Gold-set answers are never given to any system as context.</li></ul></div>
+  </div>
+  ${failBlock()}`;
+}
+function renderRel(){
+  const sys=[
+    ["Medea","An AI-driven omics research agent that plans and executes scientific analyses, investigates literature, and evaluates evidence.","Preprint","https://doi.org/10.64898/2026.01.16.696667"],
+    ["Robin","An AI-powered scientific discovery system built for research workflows that extend toward experimental validation.","FutureHouse","https://www.futurehouse.org/research/demonstrating-end-to-end-scientific-discovery-with-robin-a-multi-agent-system"],
+    ["Cancer Genome Interpreter","A platform for interpreting cancer genomic alterations and their clinical relevance.","Website","https://www.cancergenomeinterpreter.org"],
+    ["OncoKB and CIViC","Specialized knowledge resources connecting cancer alterations with therapeutic evidence. CIViC also offers an MCP server for LLM access.","CIViC","https://civicdb.org"]
+  ];
+  $("rel").innerHTML=`<h2>Building on existing AI research</h2>
+  <p class="tag">Resistance-aware molecular evidence intelligence</p>
+  <p class="lead">MolTarget AI builds on advances in AI-driven scientific discovery and addresses one focused workflow in molecular oncology.</p>
+  <div class="rows">${sys.map(x=>`<div class="row"><div class="nm">${x[0]}</div><div class="tx">${x[1]}</div><div><a href="${x[3]}" target="_blank" rel="noopener">${x[2]}</a></div></div>`).join("")}</div>
+  <div class="pitch">MolTarget AI investigates cancer-associated mutations, traces their molecular consequences, examines resistance mechanisms, and maintains evidence-linked research reports as scientific knowledge evolves.</div>
+  <div class="cols">
+    <div><h3>Our research focus</h3>
+      <p style="margin:0 0 10px;font-size:var(--fs-m)">Not another general-purpose research agent. One problem, studied end to end:</p>
+      <ol>
+        <li>EGFR-mutant lung cancer that progresses on osimertinib.</li>
+        <li>The molecular consequence of C797S, with L858R as the driver.</li>
+        <li>What T790M adds, and why cis or trans cannot be assumed. In this synthetic scenario it is co-detected after first-line osimertinib; do not present that combination as a typical pattern without supporting cohort evidence.</li>
+        <li>Active ingredients, kept apart as approved, investigational or preclinical.</li>
+        <li>A report that links every claim to its source and says when evidence is missing.</li>
+        <li>Changes in earlier reports as new evidence appears.</li>
+      </ol></div>
+    <div><h3>What we aim to demonstrate</h3>
+      <p style="margin:0 0 10px;font-size:var(--fs-m)">A traceable workflow that connects mutation-level investigation, resistance analysis and evidence updates. We test it against:</p>
+      <ul>
+        <li>A: a general-purpose LLM.</li>
+        <li>B: an LLM with CIViC retrieval through MCP (integration pending).</li>
+        <li>C: MolTarget AI.</li>
+      </ul></div>
+  </div>
+  <div class="limits"><b>How to read this page</b><ul>
+    <li>The differences above are differences of focus and scope. They are not proven technical superiority.</li>
+    <li>Our differentiation is a focused problem and an evaluable end-to-end workflow, not the invention of AI scientific reasoning.</li>
+    <li>MolTarget AI is a research-support prototype. It is not a diagnostic or treatment recommendation system.</li></ul></div>
+  <h3 style="font-family:var(--serif);margin:34px 0 8px;font-size:var(--fs-l)">Roadmap</h3>
+  <div class="rows">
+    <div class="row"><div class="nm">Next</div><div class="tx">Expansion to additional cancer types.</div><div></div></div>
+    <div class="row"><div class="nm">Then</div><div class="tx">RNA-seq integration for expression evidence.</div><div></div></div>
+    <div class="row"><div class="nm">Research</div><div class="tx">Exploration of molecular restoration strategies as a research question. Not part of this version.</div><div></div></div>
+  </div>
+  <details class="notes"><summary>Presenter notes</summary><ul>
+    <li>Say it plainly: the field is moving fast, we studied it, and we picked a narrower problem.</li>
+    <li>Do not say that Medea, Robin or CIViC MCP cannot do something. We have not reviewed everything they can do.</li>
+    <li>Say that system B is not connected yet and that results appear only after real runs.</li></ul>
+    <p style="margin:12px 0 4px"><b>Check before presenting</b></p><ul>
+    <li>Ask the organizers whether open-source MCP servers may be used as tools. Read the official rules on originality.</li>
+    <li>Do not reuse code from Medea, Robin or any repository you did not write.</li>
+    <li>Check the license of every data source you integrate.</li>
+    <li>Confirm the status of the Medea paper on the day you present.</li></ul></details>`;
+}
+function renderSettings(){
+  $("settings").innerHTML=`<h2>Settings</h2>
+  <p class="lead">Preferences for this local prototype. Theme selection is not persisted between visits.</p>
+  <div class="setgrid">
+    <div class="setrow"><h3>Theme</h3><p>Auto follows your device. Light and dark are both designed and checked for contrast.</p>
+      <div class="seg" role="group" aria-label="Theme">
+        ${["auto","light","dark"].map(t=>`<button data-theme-btn="${t}" aria-pressed="${st.theme===t}">${t[0].toUpperCase()+t.slice(1)}</button>`).join("")}
+      </div></div>
+    <div class="setrow"><h3>Run mode</h3><p><span class="pill p-warn">Scripted demo</span></p>
+      <p>This page plays a prepared run. The workflow stages, event log, source summaries, critic actions and evidence update are simulated in the browser. No live mode or recorded real-response replay is implemented.</p></div>
+    <div class="setrow"><h3>Motion</h3><p>Animations follow your device setting for reduced motion.</p></div>
+    <div class="setrow"><h3>About and limits</h3>
+      <p>MolTarget AI is a research-support prototype. It is not a diagnostic tool and does not recommend treatment.</p>
+      <p>This demo uses scripted data and simulated inputs. Tool names show planned integrations. No source is connected and no benchmark has been run.</p></div>
+  </div>`;
+}
+
+/* ---------------- views ---------------- */
+function show(v){
+  st.view=v;
+  ["walk","proof","rel","settings"].forEach(k=>{ $(k).hidden = k!==v; });
+  document.querySelectorAll(".nav button").forEach(b=>{ if(b.dataset.view===v) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current"); });
+  if(v==="proof") renderProof();
+  if(v==="rel") renderRel();
+  if(v==="settings") renderSettings();
+  window.scrollTo(0,0);
+}
+
+/* ---------------- local scripted run simulator (not a live agent) ---------------- */
+function emit(type,detail){
+  st.events.push({t:performance.now()-st.t0,type,detail});
+  if(st.events.length>90) st.events.shift();
+  renderEvents();
+}
+async function run(){
+  const my=++st.token, c=C();
+  st.t0=performance.now(); st.events=[]; st.run="running"; st.cur=0; st.open=null;
+  renderStages(); renderResults(); renderEvents();
+  for(let i=0;i<c.stages.length;i++){
+    const s=c.stages[i]; st.cur=i; renderStages();
+    emit("node_started",slug(s.name));
+    s.tools.forEach(t=>{ emit("tool_called",t); if(SOURCES.includes(t)) emit("source_step_simulated",t+" (no network request)"); });
+    await sleep(reduce?60:(s.flag?1000:650));
+    if(my!==st.token) return;
+    s.checks.forEach(ch=>emit("check_result",`${short(ch[0])}: ${ch[1]==="ok"?"pass":"warning"}`));
+    if(s.name==="Verify evidence") (c.claims||[]).filter(x=>x.st!=="removed").forEach(x=>emit("claim_added",short(x.t)));
+    if(s.name==="Critic review"){
+      (c.claims||[]).filter(x=>x.draft).forEach(x=>emit(x.st==="removed"?"claim_removed":"claim_revised",short(x.draft)));
+      if(st.caseId==="progression") emit("abstained","cis_or_trans: phasing not provided");
+    }
+    emit("node_finished",slug(s.name));
+  }
+  st.run="done"; st.cur=c.stages.length;
+  st.open=c.stages.findIndex(s=>s.flag);
+  st.tab=tabsFor()[0][0]; st.filter="all";
+  emit("report_ready",st.caseId);
+  renderStages(); renderResults();
+}
+function resetRun(){ st.token++; st.run="idle"; st.cur=-1; st.open=null; st.variant=0; st.tab=tabsFor()[0][0]; st.phasing="none"; st.filter="all"; st.events=[]; st.edge=null; st.review={status:"pending",text:"",at:null}; }
+
+/* ---------------- events ---------------- */
+$("runBtn").addEventListener("click",run);
+document.addEventListener("click",e=>{
+  const nav=e.target.closest(".nav button"); if(nav){ show(nav.dataset.view); return; }
+  const th=e.target.closest("[data-theme-btn]"); if(th){ applyTheme(th.dataset.themeBtn); return; }
+});
+$("visits").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-k]"); if(!b||b.dataset.k===st.caseId) return;
+  st.caseId=b.dataset.k; resetRun(); renderAll();
+});
+$("hChips").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-i]"); if(!b) return;
+  st.variant=+b.dataset.i; renderHero();
+});
+$("stages").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-i]"); if(!b) return;
+  const i=+b.dataset.i; st.open = st.open===i ? null : i; renderStages();
+});
+$("results").addEventListener("click",e=>{
+  const ed=e.target.closest("[data-e]"); if(ed){ st.edge=ed.dataset.e; renderResults(); const el=$("results").querySelector(`[data-e="${st.edge}"]`); if(el) el.focus(); return; }
+  const rv=e.target.closest("button[data-rv]");
+  if(rv){
+    const k=rv.dataset.rv, now=new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}), cm=(($("rvComment")||{}).value||"").trim();
+    if(k==="approve") st.review={status:"approved",text:"",at:now,comment:cm};
+    else if(k==="reject") st.review={status:"rejected",text:"",at:now,comment:cm};
+    else if(k==="edit") st.review={status:"editing",text:st.review.text,at:null};
+    else if(k==="save"){ const v=($("rvText")||{}).value||SUGGESTED; st.review={status:"edited",text:v,at:now,comment:""}; }
+    else if(k==="cancel"||k==="undo") st.review={status:"pending",text:"",at:null};
+    renderResults(); return;
+  }
+  const ph=e.target.closest("button[data-ph]"); if(ph){ st.phasing=ph.dataset.ph; renderResults(); return; }
+  const f=e.target.closest("button[data-f]"); if(f){ st.filter=f.dataset.f; renderResults(); return; }
+  const b=e.target.closest("button[data-t]"); if(!b) return;
+  st.tab=b.dataset.t; renderResults();
+});
+$("results").addEventListener("keydown",e=>{
+  const ed=e.target.closest("[data-e]");
+  if(ed && (e.key==="Enter"||e.key===" ")){ e.preventDefault(); st.edge=ed.dataset.e; renderResults(); const el=$("results").querySelector(`[data-e="${st.edge}"]`); if(el) el.focus(); return; }
+  const t=e.target.closest("button[data-t]"); if(!t||!["ArrowRight","ArrowLeft","Home","End"].includes(e.key)) return;
+  const tabs=tabsFor().map(x=>x[0]), i=tabs.indexOf(st.tab);
+  if(e.key==="Home") st.tab=tabs[0];
+  else if(e.key==="End") st.tab=tabs[tabs.length-1];
+  else st.tab=tabs[(i+(e.key==="ArrowRight"?1:tabs.length-1))%tabs.length];
+  renderResults();
+  const sel=$("results").querySelector('[aria-selected="true"]'); if(sel) sel.focus();
+});
+
+function renderAll(){ renderHero(); renderVisits(); renderStages(); renderInput(); renderResults(); renderNotes(); renderEvents(); }
+renderAll();
+
+</script>
+</body>
+</html>
